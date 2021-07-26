@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
 
            @Override
            public void onFailure(Call<RegistrSet> call, Throwable t) {
-               tres.setText("eblan");
+               tres.setText("");
 
            }
        });
