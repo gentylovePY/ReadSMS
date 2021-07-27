@@ -1,37 +1,18 @@
 package com.example.readsms;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.List;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-
-import okhttp3.FormBody;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -41,8 +22,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     EditText e1,e2;
-    String  name,hobby;
-    TextView tres;
+
+    TextView textViewResult;
 
 
     @Override
@@ -56,9 +37,10 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS}, 1000);
         }
 
-        e1 = findViewById(R.id.editTextTextEmailAddress);
-        e2 = findViewById(R.id.editTextTextPassword);
-        tres = findViewById(R.id.textView);
+
+        textViewResult = findViewById(R.id.textView);
+
+
 
 
 
@@ -128,35 +110,8 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
 
-    public void Post(View view) {
-        name = e1.getText().toString();
-        hobby = e2.getText().toString();
-
-        Retrofit retrofit = new Retrofit.Builder().baseUrl("https://iproxy.online/api/1/login")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        RegistRetrofit registRetrofit = retrofit.create(RegistRetrofit.class);
-        RegistrSet registrSet = new RegistrSet(name,hobby);
-       Call<RegistrSet> call = registRetrofit.PosrData(registrSet);
-
-       call.enqueue(new Callback<RegistrSet>() {
-           @SuppressLint("SetTextI18n")
-           @Override
-           public void onResponse(Call<RegistrSet> call, Response<RegistrSet> response) {
-               tres.setText(response.body().getJson().getName()+response.body().getJson().getHobby());
-
-           }
-
-           @Override
-           public void onFailure(Call<RegistrSet> call, Throwable t) {
-               tres.setText("");
-
-           }
-       });
 
 
-    }
 
 
     @Override
