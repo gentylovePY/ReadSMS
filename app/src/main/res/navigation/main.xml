@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    app:startDestination="@id/nav_dest_home">
+
+    <!-- List of destinations in this graph -->
+    <fragment
+        android:id="@+id/nav_dest_home"
+        android:name="online.iproxy.sms.ui.screen.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_dest_permissions"
+        android:name="online.iproxy.sms.ui.screen.permissions.PermissionsFragment"
+        android:label="Permissions"
+        tools:layout="@layout/fragment_permissions" />
+
+    <fragment
+        android:id="@+id/nav_dest_login"
+        android:name="online.iproxy.sms.ui.screen.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login" />
+
+    <!-- Global actions in this graph -->
+    <action
+        android:id="@+id/nav_action_to_permissions"
+        app:destination="@id/nav_dest_permissions"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/main" />
+
+    <action
+        android:id="@+id/nav_action_to_home"
+        app:destination="@id/nav_dest_home"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/main" />
+
+    <action
+        android:id="@+id/nav_action_to_login"
+        app:destination="@id/nav_dest_login"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/main" />
+
+</navigation>
