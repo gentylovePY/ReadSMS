@@ -13,8 +13,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import online.iproxy.sms.R
 import online.iproxy.sms.databinding.FragmentPermissionsBinding
-import online.iproxy.sms.ui.screen.permissions.PermissionsViewModel.Effect
-import online.iproxy.sms.ui.screen.permissions.PermissionsViewModel.Input
+import online.iproxy.sms.ui.screen.permissions.PermissionsViewModel.*
+import online.iproxy.sms.util.ImplicitIntents
 import online.iproxy.sms.util.Permissions.getMissingPermissions
 import online.iproxy.sms.util.Permissions.shouldShowRequestPermissionsRationale
 
@@ -29,6 +29,16 @@ class PermissionsFragment : Fragment() {
         registerForActivityResult(RequestMultiplePermissions()) { result ->
             viewModel.processInput(Input.PermissionsGranted(result))
         }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val init = Input.Initialize(
+            permissions = getMissingPermissions(requireActivity()),
+            showPermissionsRationale = shouldShowRequestPermissionsRationale(requireActivity())
+        )
+        viewModel.processInput(init)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,30 +77,32 @@ class PermissionsFragment : Fragment() {
     }
 
     private fun renderState(state: PermissionsViewModel.State) {
-        when {
-            !state.initialized -> {
-                // do nothing
-            }
-            state.granted || state.missingPermissions.isEmpty() -> {
+        if (!state.initialized) {
+            return
+        }
+
+        when (state.permissionsState) {
+            PermissionState.GRANTED -> {
                 binding.message.text = "All permissions granted."
                 binding.actionButton.text = "Done"
                 binding.actionButton.setOnClickListener {
                     findNavController().navigate(R.id.nav_action_to_home)
                 }
             }
-            !state.requested -> {
-                binding.message.text = "The app requires SMS permissions to operate."
-                binding.actionButton.text = "Grant permissions"
-                binding.actionButton.setOnClickListener {
-                    viewModel.processInput(Input.RequestPermissions)
-                }
-            }
-            !state.granted -> {
+            PermissionState.DENIED -> {
                 binding.message.text =
                     "You denied permissions. Please allow them in the app Settings."
                 binding.actionButton.text = "Go to Settings"
                 binding.actionButton.setOnClickListener {
-                    // todo: goto app settings
+                    val intent = ImplicitIntents.appSettingsIntent(requireContext())
+                    startActivity(intent)
+                }
+            }
+            else -> {
+                binding.message.text = "The app requires SMS permissions to operate."
+                binding.actionButton.text = "Grant permissions"
+                binding.actionButton.setOnClickListener {
+                    viewModel.processInput(Input.RequestPermissions)
                 }
             }
         }
@@ -98,10 +110,7 @@ class PermissionsFragment : Fragment() {
 
     private fun updatePermissionsState() {
         viewModel.processInput(
-            Input.UpdatePermissionsState(
-                permissions = getMissingPermissions(requireActivity()),
-                showPermissionsRationale = shouldShowRequestPermissionsRationale(requireActivity())
-            )
+            Input.UpdateMissingPermissions(getMissingPermissions(requireActivity()))
         )
     }
 

@@ -12,17 +12,28 @@ class PermissionsViewModel @Inject constructor() :
     data class State(
         val initialized: Boolean = false,
         val missingPermissions: List<String> = emptyList(),
-        val requested: Boolean = false,
-        val granted: Boolean = false
+        val permissionsState: PermissionState = PermissionState.NOT_REQUESTED,
     )
 
+    enum class PermissionState {
+        NOT_REQUESTED,
+        REQUESTED,
+        GRANTED,
+        DENIED,
+    }
+
     sealed class Input {
-        data class UpdatePermissionsState(
+        data class Initialize(
             val permissions: List<String>,
             val showPermissionsRationale: Boolean
         ) : Input()
 
+        data class UpdateMissingPermissions(
+            val permissions: List<String>
+        ) : Input()
+
         object RequestPermissions : Input()
+
         data class PermissionsGranted(val result: Map<String, Boolean>) : Input()
     }
 
@@ -34,8 +45,12 @@ class PermissionsViewModel @Inject constructor() :
 
     override fun processInput(input: Input) {
         when (input) {
-            is Input.UpdatePermissionsState -> {
-                updatePermissionsState(input.permissions, input.showPermissionsRationale)
+            is Input.Initialize -> {
+                initialize(input.permissions, input.showPermissionsRationale)
+            }
+
+            is Input.UpdateMissingPermissions -> {
+                updatePermissionsState(input.permissions)
             }
             is Input.RequestPermissions -> {
                 handleRequestPermissions()
@@ -46,17 +61,43 @@ class PermissionsViewModel @Inject constructor() :
         }
     }
 
-    private fun updatePermissionsState(
+    private fun initialize(
         permissions: List<String>,
         showPermissionsRationale: Boolean
     ) {
         val state = getState()
+        if (state.initialized) {
+            return
+        }
+
+        val newState = if (permissions.isNotEmpty() && !showPermissionsRationale) {
+            emitEffect(Effect.RequestPermissions(permissions))
+            state.copy(
+                initialized = true,
+                missingPermissions = permissions,
+                permissionsState = PermissionState.REQUESTED
+            )
+        } else {
+            state.copy(
+                initialized = true,
+                missingPermissions = permissions,
+                permissionsState = PermissionState.NOT_REQUESTED
+            )
+        }
+
+        emitState(newState)
+    }
+
+    private fun updatePermissionsState(permissions: List<String>) {
+        val state = getState()
+        val allGranted = permissions.isEmpty()
+
         val newState = state.copy(
             initialized = true,
             missingPermissions = permissions,
-            requested = state.requested,
-            granted = permissions.isEmpty()
+            permissionsState = if (allGranted) PermissionState.GRANTED else state.permissionsState
         )
+
         emitState(newState)
     }
 
@@ -64,20 +105,19 @@ class PermissionsViewModel @Inject constructor() :
         val state = getState()
         if (state.missingPermissions.isNotEmpty()) {
             emitEffect(Effect.RequestPermissions(state.missingPermissions))
+            emitState(state.copy(permissionsState = PermissionState.REQUESTED))
         }
-        emitState(state.copy(requested = true))
     }
 
     private fun handlePermissionsResult(result: Map<String, Boolean>) {
         val state = getState()
         val newPermissions = state.missingPermissions.filterNot { result[it] ?: false }
-        emitState(
-            state.copy(
-                missingPermissions = newPermissions,
-                requested = true,
-                granted = newPermissions.isEmpty()
-            )
+        val granted = newPermissions.isEmpty()
+        val newState = state.copy(
+            missingPermissions = newPermissions,
+            permissionsState = if (granted) PermissionState.GRANTED else PermissionState.DENIED,
         )
+        emitState(newState)
     }
 
 }
